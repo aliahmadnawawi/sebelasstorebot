@@ -1,0 +1,26 @@
+# env / secrets
+.env
+.env.*
+!.env.example
+
+# node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# docker volumes / runtime
+pgdata/
+redis-data/
+storage/
+*.sqlite
+*.db
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# logs
+logs/
+*.log

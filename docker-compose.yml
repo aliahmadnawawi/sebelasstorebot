@@ -1,0 +1,73 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: sebelas
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: sebelasstore
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+
+  api:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./app:/app
+      - ./storage:/storage
+    command: sh -c "npm install && npm run migrate && npm run start:api"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      PAKASIR_PROJECT: ${PAKASIR_PROJECT}
+      PAKASIR_API_KEY: ${PAKASIR_API_KEY}
+    restart: unless-stopped
+    depends_on: [postgres, redis]
+
+  bot:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./app:/app
+      - ./storage:/storage
+    command: sh -c "npm install && npm run start:bot"
+    environment:
+      PAKASIR_PROJECT: ${PAKASIR_PROJECT}
+      PAKASIR_API_KEY: ${PAKASIR_API_KEY}
+      BOT_TOKEN: ${BOT_TOKEN}
+      ADMIN_TELEGRAM_ID: ${ADMIN_TELEGRAM_ID}
+      QRIS_EXPIRE_MINUTES: ${QRIS_EXPIRE_MINUTES}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+    restart: unless-stopped
+    depends_on: [api, postgres, redis]
+
+  worker:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./app:/app
+    command: sh -c "npm install && npm run start:worker"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      BOT_TOKEN: ${BOT_TOKEN}
+    restart: unless-stopped
+    depends_on: [postgres, redis]
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainerdata:/data
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  portainerdata:
